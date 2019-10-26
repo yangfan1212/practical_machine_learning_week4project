@@ -7,4 +7,6 @@ You can find below the html file which is knited by a R markdown file.
 
 I also published my work through Rpub, if there is something wrong with the html file, you can refer to the link below.
 
+http://rpubs.com/liyangfan12/543366
+
 Many thanks!
