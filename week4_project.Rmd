@@ -1,0 +1,93 @@
+---
+title: "week4_project"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Background
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+
+
+#Data
+
+The training data for this project are available here:
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+
+The test data are available here:
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+#Data Preparation
+
+##Step 1:Load in train and test dataset.
+Also, make all missing values be represented by NA
+```{r,message=FALSE}
+library(caret)
+library(randomForest)
+training <- read.csv("pml-training.csv",na.strings=c("NA","","#DIV/0!",""))
+testing <- read.csv("pml-testing.csv",na.strings = c("NA","#DIV/0!",""))
+```
+
+##Then we can observe both two datasets
+
+The training dataset
+```{r}
+head(training)
+```
+
+Then for testing dataset
+```{r}
+head(testing)
+```
+
+We can see two probelms here
+
+1, There are lots of NAs containing in both two datasets. In this case, we should take care of it by elimination the records which contain too much NA because it would make no contribute to the regression results. Therefore we want to exclude the observation which contain let's say more than 90% NA.
+```{r}
+exclude <- colSums(is.na(training))/nrow(training)<0.9
+excluded_training <- training[,exclude]
+```
+We end up with new training dataset called: excluded_training
+
+2,The first 7 columns seems to have little effect on our research (we are focusing on the participants' movement) so we can simply remove it.Also, we need to exclude these columns in the testing dataset as well.
+
+```{r}
+final_training <- excluded_training[,-c(1:7)]
+final_testing <- testing[,-c(1:7)]
+names <- names(final_training)
+final_testing <- final_testing[,names[1:52]]
+```
+
+Until now, we have finished with solving the problems.
+
+Then we need to divide the training dataset into two parts (training_data and cross_data)
+The ratio of training_data and cross validation dataset shoud be 3:1
+so we take p=0.75
+```{r}
+divide <- createDataPartition(final_training$classe, p=0.75)[[1]]
+training_data <- final_training[divide,]
+cross_data <- final_training[-divide,]
+
+```
+
+#Algorithm: Random forest
+```{r}
+randomf_Model <- train(classe ~., method='rf', data=training_data, ntree=128)
+randomf_Prediction <- predict(randomf_Model, cross_data)
+confusionMatrix(cross_data$classe, randomf_Prediction)
+```
+
+#Prediction
+```{r}
+predict(randomf_Model,final_testing)
+```
+
+#Conclusion
+
+we can see that the Random Forest algorithm reach a result which seems good.
+The accuracy that we obtained is >99%.
